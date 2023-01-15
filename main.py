@@ -57,12 +57,12 @@ def get_movies() -> List[Movie]:
     return JSONResponse(content=movies)
 
 
-@app.get("/movies/{id}", tags=["movies"])
+@app.get("/movies/{id}", tags=["movies"], status_code=200)
 def get_movie(id: int = Path(ge=1, le=2000)) -> Movie:
     for item in movies:
         if item["id"] == id:
-            return JSONResponse(content=item)
-    return JSONResponse(content=[])
+            return JSONResponse(content=item, status_code=200)
+    return JSONResponse(content=[], status_code=404)
 
 
 def valid_querie(year: int, category: str, movie: dict) -> bool:
@@ -70,7 +70,7 @@ def valid_querie(year: int, category: str, movie: dict) -> bool:
 
 
 @app.get(
-    "/movies/", tags=["movies"], response_model=List[Movie]
+    "/movies/", tags=["movies"], response_model=List[Movie], status_code=200
 )  # query parameters
 def get_movies_by_query(
     category: str = Query(min_length=5, max_length=15), year: int = None
@@ -81,26 +81,40 @@ def get_movies_by_query(
         data = [
             movie for movie in movies if valid_querie(year, category, movie)
         ]
-    return JSONResponse(content=data)
+    return JSONResponse(content=data, status_code=200)
 
 
-@app.post("/movies", tags=["movies"], response_model=dict)
+@app.post("/movies", tags=["movies"], response_model=dict, status_code=200)
 def create_movie(movie: Movie) -> dict:
     movies.append(movie)
-    return JSONResponse(content={"message": "Movie saved"})
+    return JSONResponse(content={"message": "Movie saved"}, status_code=200)
 
 
-@app.delete("/movies/{id}", tags=["movies"], response_model=dict)
+@app.delete(
+    "/movies/{id}", tags=["movies"], response_model=dict, status_code=200
+)
 def delete_movie(id: int) -> dict:
     for movie in movies:
         if id == movie["id"]:
             movies.remove(movie)
-    return JSONResponse(content={"message": "Movie updated"})
+            return JSONResponse(
+                content={"message": "Movie updated"}, status_code=200
+            )
+    return JSONResponse(
+        content={"message": "Movie not found"}, status_code=404
+    )
 
 
-@app.put("/movie/{movie_id}", tags=["movies"], response_model=dict)
+@app.put(
+    "/movie/{movie_id}", tags=["movies"], response_model=dict, status_code=200
+)
 async def put_movie(movie: Movie) -> dict:
     for movie in movies:
         if movie["id"] == movie.id:
             movie.update(movie.__dict__)
-    return JSONResponse(content={"message": "Movie updated"})
+            return JSONResponse(
+                content={"message": "Movie updated"}, status_code=200
+            )
+    return JSONResponse(
+        content={"message": "Movie not found"}, status_code=404
+    )
