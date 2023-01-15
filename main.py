@@ -1,10 +1,23 @@
+from typing import Optional
+
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 
 from fastapi import Body, FastAPI
 
 app = FastAPI()
 app.title = "My app with fastapi"
 app.version = "0.0.1"
+
+
+class Movie(BaseModel):
+    id: Optional[int] = None
+    title: str
+    overview: str
+    year: str
+    rating: str
+    category: str
+
 
 movies = [
     {
@@ -58,24 +71,8 @@ def get_movies_by_query(category: str, year: int = None):
 
 
 @app.post("/movies", tags=["movies"])
-def create_movie(
-    id: int = Body(),
-    title: str = Body(),
-    overview: str = Body(),
-    year: int = Body(),
-    rating: str = Body(),
-    category: str = Body(),
-):
-    movies.append(
-        {
-            "id": id,
-            "title": title,
-            "overview": overview,
-            "year": year,
-            "rating": rating,
-            "category": category,
-        }
-    )
+def create_movie(movie: Movie):
+    movies.append(movie)
 
 
 @app.delete("/movies/{id}", tags=["movies"])
@@ -87,22 +84,7 @@ def delete_movie(id: int):
 
 
 @app.put("/movie/{movie_id}", tags=["movies"])
-async def put_movie(
-    movie_id: int,
-    title: str = Body(),
-    overview: str = Body(),
-    year: int = Body(),
-    rating: str = Body(),
-    category: str = Body(),
-):
+async def put_movie(movie: Movie):
     for movie in movies:
-        if movie["id"] == movie_id:
-            movie.update(
-                {
-                    "title": title,
-                    "overview": overview,
-                    "year": year,
-                    "rating": rating,
-                    "category": category,
-                }
-            )
+        if movie["id"] == movie.id:
+            movie.update(movie.__dict__)
