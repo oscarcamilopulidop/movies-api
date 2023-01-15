@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import Body, FastAPI, Path, Query
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 app = FastAPI()
@@ -53,46 +53,54 @@ def message():
 
 
 @app.get("/movies", tags=["movies"])
-def get_movies():
-    return movies
+def get_movies() -> List[Movie]:
+    return JSONResponse(content=movies)
 
 
 @app.get("/movies/{id}", tags=["movies"])
-def get_movie(id: int = Path(ge=1, le=2000)):
+def get_movie(id: int = Path(ge=1, le=2000)) -> Movie:
     for item in movies:
         if item["id"] == id:
-            return item
+            return JSONResponse(content=item)
+    return JSONResponse(content=[])
 
 
-def valid_querie(year: int, category: str, movie: dict):
+def valid_querie(year: int, category: str, movie: dict) -> bool:
     return movie["category"] == category and movie["year"] == year
 
 
-@app.get("/movies/", tags=["movies"])  # query parameters
-def get_movies_by_query(category: str=Query(min_length=5, max_length=15), year: int = None):
+@app.get(
+    "/movies/", tags=["movies"], response_model=List[Movie]
+)  # query parameters
+def get_movies_by_query(
+    category: str = Query(min_length=5, max_length=15), year: int = None
+) -> List[Movie]:
     if year is None:
-        return [movie for movie in movies if movie["category"] == category]
+        data = [movie for movie in movies if movie["category"] == category]
     else:
-        return [
+        data = [
             movie for movie in movies if valid_querie(year, category, movie)
         ]
+    return JSONResponse(content=data)
 
 
-@app.post("/movies", tags=["movies"])
-def create_movie(movie: Movie):
+@app.post("/movies", tags=["movies"], response_model=dict)
+def create_movie(movie: Movie) -> dict:
     movies.append(movie)
+    return JSONResponse(content={"message": "Movie saved"})
 
 
-@app.delete("/movies/{id}", tags=["movies"])
-def delete_movie(id: int):
+@app.delete("/movies/{id}", tags=["movies"], response_model=dict)
+def delete_movie(id: int) -> dict:
     for movie in movies:
         if id == movie["id"]:
             movies.remove(movie)
-            return {"erased"}
+    return JSONResponse(content={"message": "Movie updated"})
 
 
-@app.put("/movie/{movie_id}", tags=["movies"])
-async def put_movie(movie: Movie):
+@app.put("/movie/{movie_id}", tags=["movies"], response_model=dict)
+async def put_movie(movie: Movie) -> dict:
     for movie in movies:
         if movie["id"] == movie.id:
             movie.update(movie.__dict__)
+    return JSONResponse(content={"message": "Movie updated"})
