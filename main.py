@@ -1,9 +1,8 @@
 from typing import Optional
 
+from fastapi import Body, FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-
-from fastapi import Body, FastAPI
 
 app = FastAPI()
 app.title = "My app with fastapi"
